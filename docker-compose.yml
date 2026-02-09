@@ -1,0 +1,9 @@
+version: "3.9"
+
+services:
+  mentor:
+    build: .
+    ports:
+      - "3333:3333"
+    environment:
+      GITHUB_TOKEN: ${GITHUB_TOKEN}

@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+requests
+mcp
+pyyaml
+python-hcl2
+pytest
