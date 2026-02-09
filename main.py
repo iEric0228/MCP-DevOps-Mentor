@@ -1,6 +1,5 @@
 from fastapi import FastAPI
-from mcp.server.fastapi import MCPServer
-from mcp.server import tool
+from mcp.server.fastmcp import FastMCP
 from pathlib import Path
 
 from mentor.mode_loader import get_system_prompt, load_mode_prompt
@@ -8,11 +7,13 @@ from analyzer.repo_analyzer import analyze_repo
 from reviewers.cicd_reviewer import review_github_actions
 from reviewers.terraform_reviewer import review_terraform
 from reviewers.aws_advisor import review_aws_infrastructure
+from reviewers.terraform_module_analyzer import analyze_terraform_modules
 from tools.github import (
     list_repo_files,
     read_github_file,
     read_github_workflows,
     read_terraform_files,
+    read_terraform_all_files,
 )
 from memory.tracker import update_skills, get_learning_recommendations
 
@@ -20,8 +21,12 @@ app = FastAPI()
 
 CURRENT_MODE = "mentor"
 
+mcp = FastMCP(
+    name="DevOps Mentor MCP",
+)
 
-@tool(
+
+@mcp.tool(
     name="set_review_mode",
     description="Set the review mode: mentor, review, debug, interview",
 )
@@ -34,7 +39,7 @@ def set_review_mode(mode: str):
     return f"Review mode set to '{mode}'"
 
 
-@tool(
+@mcp.tool(
     name="analyze_github_repo",
     description="Analyze a GitHub repository for tech stack and DevOps maturity",
 )
@@ -50,7 +55,7 @@ def analyze_github_repo(owner: str, repo: str):
     return result
 
 
-@tool(
+@mcp.tool(
     name="review_cicd_pipeline",
     description="Review GitHub Actions CI/CD workflows for a repository",
 )
@@ -64,7 +69,7 @@ def review_cicd_pipeline(owner: str, repo: str):
     return result
 
 
-@tool(
+@mcp.tool(
     name="get_skill_profile",
     description="View current skill profile and identify weak areas",
 )
@@ -87,7 +92,7 @@ def get_skill_profile():
     }
 
 
-@tool(
+@mcp.tool(
     name="review_terraform",
     description="Review Terraform files in a GitHub repository for security, cost, and best practice issues",
 )
@@ -101,7 +106,7 @@ def review_terraform_tool(owner: str, repo: str):
     return result
 
 
-@tool(
+@mcp.tool(
     name="review_aws_infrastructure",
     description="Review AWS infrastructure for cost optimization and security issues based on Terraform and repo analysis",
 )
@@ -126,7 +131,21 @@ def review_aws_infra_tool(owner: str, repo: str):
     return result
 
 
-@tool(
+@mcp.tool(
+    name="analyze_terraform_modules",
+    description="Analyze Terraform modules for structure validation, security issues, and cost estimation",
+)
+def analyze_terraform_modules_tool(owner: str, repo: str):
+    tf_files = read_terraform_all_files(owner, repo)
+    if not tf_files:
+        return {"error": "No Terraform files found or failed to read them."}
+
+    result = analyze_terraform_modules(tf_files)
+    update_skills(str(result.get("risks", [])), result.get("maturity_level", "basic"))
+    return result
+
+
+@mcp.tool(
     name="get_learning_path",
     description="Get a personalized learning path based on current skill gaps and dependencies",
 )
@@ -137,21 +156,28 @@ def get_learning_path():
     return get_learning_recommendations(profile)
 
 
-mcp = MCPServer(
-    name="DevOps Mentor MCP",
-    description="A senior DevOps mentor that reviews code and infrastructure",
-    system_prompt=get_system_prompt(CURRENT_MODE),
+@mcp.tool(
+    name="read_github_file",
+    description="Read the contents of a single file from a GitHub repository",
 )
+def read_github_file_tool(owner: str, repo: str, path: str):
+    return read_github_file(owner, repo, path)
 
-mcp.add_tool(set_review_mode)
-mcp.add_tool(analyze_github_repo)
-mcp.add_tool(review_cicd_pipeline)
-mcp.add_tool(get_skill_profile)
-mcp.add_tool(read_github_file)
-mcp.add_tool(read_github_workflows)
-mcp.add_tool(read_terraform_files)
-mcp.add_tool(review_terraform_tool)
-mcp.add_tool(review_aws_infra_tool)
-mcp.add_tool(get_learning_path)
 
-app.mount("/", mcp.app)
+@mcp.tool(
+    name="read_github_workflows",
+    description="Read all GitHub Actions workflow files from a repository",
+)
+def read_github_workflows_tool(owner: str, repo: str):
+    return read_github_workflows(owner, repo)
+
+
+@mcp.tool(
+    name="read_terraform_files",
+    description="Read all Terraform (.tf) files from a GitHub repository",
+)
+def read_terraform_files_tool(owner: str, repo: str):
+    return read_terraform_files(owner, repo)
+
+
+app.mount("/", mcp.sse_app())

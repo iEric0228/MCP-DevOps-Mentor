@@ -156,3 +156,81 @@ def sample_file_list_minimal():
         "main.py",
         "requirements.txt",
     ]
+
+
+@pytest.fixture
+def sample_terraform_with_modules():
+    return {
+        "main.tf": '''
+module "vpc" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "~> 5.0"
+  cidr    = var.vpc_cidr
+}
+
+resource "aws_instance" "web" {
+  ami           = var.ami_id
+  instance_type = "t3.micro"
+  subnet_id     = module.vpc.public_subnets[0]
+  tags = {
+    Name = "web-server"
+  }
+}
+''',
+        "variables.tf": '''
+variable "vpc_cidr" {
+  type    = string
+  default = "10.0.0.0/16"
+}
+
+variable "ami_id" {
+  type = string
+}
+
+variable "db_password" {
+  type = string
+}
+''',
+        "outputs.tf": '''
+output "instance_id" {
+  value = aws_instance.web.id
+}
+
+output "vpc_id" {
+  value = module.vpc.vpc_id
+}
+''',
+    }
+
+
+@pytest.fixture
+def sample_terraform_modules_insecure():
+    return {
+        "main.tf": '''
+module "custom" {
+  source = "git::https://github.com/random-org/module.git"
+}
+
+resource "aws_nat_gateway" "main" {
+  allocation_id = "eip-123"
+  subnet_id     = "subnet-123"
+}
+
+resource "aws_db_instance" "main" {
+  engine         = "postgres"
+  instance_class = "db.r5.2xlarge"
+}
+''',
+        "variables.tf": '''
+variable "api_key" {
+  type    = string
+  default = "sk-test-12345"
+}
+''',
+        "outputs.tf": '''
+output "api_key" {
+  value = var.api_key
+}
+''',
+        "prod.tfvars": 'db_password = "real-secret-password"',
+    }

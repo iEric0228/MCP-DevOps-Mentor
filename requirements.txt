@@ -1,7 +1,7 @@
 fastapi
 uvicorn
 requests
-mcp
+mcp[cli]>=1.2.0
 pyyaml
 python-hcl2
 pytest
