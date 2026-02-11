@@ -16,6 +16,7 @@ from tools.github import (
     read_terraform_all_files,
 )
 from memory.tracker import update_skills, get_learning_recommendations
+from enhancer.prompt_enhancer import enhance_prompt
 
 app = FastAPI()
 
@@ -178,6 +179,27 @@ def read_github_workflows_tool(owner: str, repo: str):
 )
 def read_terraform_files_tool(owner: str, repo: str):
     return read_terraform_files(owner, repo)
+
+
+@mcp.tool(
+    name="enhance_prompt",
+    description="Improve a raw DevOps-related prompt by adding structure, context, and best-practice considerations. "
+    "Returns the enhanced prompt with XML-structured sections, injected DevOps dimensions, "
+    "skill-level adaptation, and chain-of-thought guidance.",
+)
+def enhance_prompt_tool(
+    prompt: str,
+    mode: str = "",
+    cloud_provider: str = "",
+    focus_areas: str = "",
+):
+    effective_mode = mode if mode else CURRENT_MODE
+    return enhance_prompt(
+        raw_prompt=prompt,
+        mode=effective_mode,
+        cloud_provider=cloud_provider,
+        focus_areas=focus_areas,
+    )
 
 
 app.mount("/", mcp.sse_app())

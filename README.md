@@ -33,6 +33,11 @@ MCP Client (IDE / Claude)
 |   - Cost Optimization         |
 |   - Security Posture          |
 |                               |
+|   Prompt Enhancer             |
+|   - Domain Detection          |
+|   - Dimension Injection       |
+|   - Skill-Aware Adaptation    |
+|                               |
 |   Skill Tracker               |
 |   - Weighted Scoring          |
 |   - Learning Path Engine      |
@@ -44,7 +49,7 @@ MCP Client (IDE / Claude)
 
 ## Features
 
-### 10 MCP Tools
+### 11 MCP Tools
 
 | Tool | Description |
 |------|-------------|
@@ -53,6 +58,8 @@ MCP Client (IDE / Claude)
 | `review_cicd_pipeline` | Review GitHub Actions workflows with YAML parsing |
 | `review_terraform` | Audit Terraform files for security, state management, and best practices |
 | `review_aws_infrastructure` | AWS cost optimization and security posture analysis |
+| `analyze_terraform_modules` | Analyze Terraform modules for structure, security, and cost estimation |
+| `enhance_prompt` | Improve raw DevOps prompts with structure, context, and best-practice considerations |
 | `get_skill_profile` | View your current skill levels and evidence counts |
 | `get_learning_path` | Get a personalized learning roadmap based on skill gaps |
 | `read_github_file` | Read a single file from a GitHub repository |
@@ -114,6 +121,68 @@ Analyzes detected Terraform resources and recommends:
 - IAM roles over IAM users
 - RDS encryption at rest
 - Lambda VPC placement
+
+### Prompt Enhancer
+
+Inspired by [Claude's Prompt Improver](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompt-improver), the prompt enhancer automatically improves raw DevOps prompts through a **6-stage deterministic pipeline** (no LLM API calls -- pure template logic):
+
+| Stage | What it Does |
+|-------|-------------|
+| 1. Domain Detection | Keyword-matches against 8 DevOps domains (CI/CD, Docker, Terraform, AWS, Security, Observability, Networking, Cost) |
+| 2. Dimension Injection | Checks if key considerations (security, cost, rollback, scalability, etc.) are already in the prompt -- injects missing ones |
+| 3. Cloud Provider Context | Detects or defaults to AWS, prepends provider-specific context |
+| 4. Skill-Level Adaptation | Reads your tracked skill profile and adapts tone/detail (beginner=detailed, advanced=concise) |
+| 5. Mode-Aware Structuring | Applies the active review mode template (mentor/review/debug/interview) |
+| 6. XML Assembly | Wraps everything in structured XML tags (`<context>`, `<task>`, `<thinking>`, `<output_format>`) |
+
+**Parameters:**
+
+```
+enhance_prompt(
+    prompt="Set up a CI/CD pipeline for my Python app",
+    mode="mentor",           # optional, defaults to current mode
+    cloud_provider="aws",    # optional, auto-detected or defaults to AWS
+    focus_areas="security"   # optional, comma-separated dimension filter
+)
+```
+
+**Example output structure:**
+
+```xml
+<context>
+Cloud provider context: AWS. ...
+Domains: ci_cd
+User experience level: beginner
+Response detail: detailed
+</context>
+
+<instructions>
+You are helping a DevOps learner understand and implement the following. ...
+</instructions>
+
+<task>
+Set up a CI/CD pipeline for my Python app
+</task>
+
+<additional_considerations>
+- Consider security implications: action pinning, least-privilege permissions...
+- Include a rollback strategy: how to revert a failed deployment safely.
+- Address build performance: dependency caching, artifact reuse...
+- Include testing requirements: what tests to run, coverage thresholds...
+</additional_considerations>
+
+<thinking>
+Think through this step by step, explaining your reasoning at each stage.
+</thinking>
+
+<output_format>
+Structure your response as:
+1. Conceptual explanation (the WHY)
+2. Implementation approach (the HOW)
+3. Common pitfalls to avoid
+4. Next steps for learning
+</output_format>
+```
 
 ### Skill Tracking
 
@@ -180,6 +249,10 @@ MCP-DevOps-Mentor/
     aws_advisor.py                  # AWS cost + security advisor
   tools/
     github.py                       # GitHub REST API integration
+  enhancer/
+    prompt_enhancer.py              # 6-stage prompt enhancement pipeline
+    domain_rules.py                 # Domain keywords, dimension injections, templates
+    skill_adapter.py                # Skill-level to enhancement behavior bridge
   memory/
     models.py                       # SkillState, UserProfile dataclasses
     store.py                        # SQLite persistence
@@ -201,6 +274,9 @@ MCP-DevOps-Mentor/
     test_tracker.py                 # 17 tests
     test_store.py                   # 5 tests
     test_mode_loader.py             # 8 tests
+    test_prompt_enhancer.py         # 38 tests
+    test_domain_rules.py            # 10 tests
+    test_skill_adapter.py           # 10 tests
 ```
 
 ## Technology Stack
@@ -213,7 +289,7 @@ MCP-DevOps-Mentor/
 | CI/CD Parsing | PyYAML |
 | Terraform Parsing | python-hcl2 |
 | Persistence | SQLite |
-| Testing | pytest (82 tests) |
+| Testing | pytest (182 tests) |
 | Containerization | Docker |
 | External API | GitHub REST API v3 |
 
@@ -231,6 +307,10 @@ Once connected via an MCP client:
 > "What are my weakest DevOps skills? Give me a learning path."
 
 > "Switch to interview mode. Challenge my system design."
+
+> "Enhance my prompt: Set up a CI/CD pipeline for my Python app"
+
+> "Enhance this prompt with a focus on security: Deploy containers to ECS with Terraform"
 ```
 
 ## Design Decisions

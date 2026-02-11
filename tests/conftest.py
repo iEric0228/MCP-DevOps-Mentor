@@ -234,3 +234,21 @@ output "api_key" {
 ''',
         "prod.tfvars": 'db_password = "real-secret-password"',
     }
+
+
+@pytest.fixture
+def sample_raw_prompt_cicd():
+    return "Set up a CI/CD pipeline for my Python app"
+
+
+@pytest.fixture
+def sample_raw_prompt_terraform():
+    return "Create a Terraform module for a VPC with public and private subnets"
+
+
+@pytest.fixture
+def sample_raw_prompt_comprehensive():
+    return (
+        "Set up a CI/CD pipeline that deploys Docker containers to ECS "
+        "with Terraform, including security scanning and cost monitoring"
+    )
