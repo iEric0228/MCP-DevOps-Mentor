@@ -1,24 +1,29 @@
 from fastapi import FastAPI
 from mcp.server.fastmcp import FastMCP
-from pathlib import Path
 
-from mentor.mode_loader import get_system_prompt, load_mode_prompt
 from analyzer.repo_analyzer import analyze_repo
-from reviewers.cicd_reviewer import review_github_actions
-from reviewers.terraform_reviewer import review_terraform
+from enhancer.prompt_enhancer import enhance_prompt
+from memory.tracker import get_learning_recommendations, update_skills
 from reviewers.aws_advisor import review_aws_infrastructure
+from reviewers.cicd_reviewer import review_github_actions
 from reviewers.terraform_module_analyzer import analyze_terraform_modules
+from reviewers.terraform_reviewer import review_terraform
 from tools.github import (
     list_repo_files,
     read_github_file,
     read_github_workflows,
-    read_terraform_files,
     read_terraform_all_files,
+    read_terraform_files,
 )
-from memory.tracker import update_skills, get_learning_recommendations
-from enhancer.prompt_enhancer import enhance_prompt
 
 app = FastAPI()
+
+
+@app.get("/health")
+def health() -> dict:
+    """Liveness probe for the container HEALTHCHECK."""
+    return {"status": "ok"}
+
 
 CURRENT_MODE = "mentor"
 
@@ -50,9 +55,7 @@ def analyze_github_repo(owner: str, repo: str):
         return files
 
     result = analyze_repo(files)
-    update_skills(
-        str(result.get("key_findings", [])), result.get("maturity_level", "early")
-    )
+    update_skills(str(result.get("key_findings", [])), result.get("maturity_level", "early"))
     return result
 
 
