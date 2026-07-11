@@ -1,7 +1,10 @@
-fastapi
-uvicorn
-requests
-mcp[cli]>=1.2.0
-pyyaml
-python-hcl2
-pytest
+# Pinned: unpinned installs let python-hcl2 8.x in, whose changed parse
+# representation (quote-wrapped keys) broke 10 of 182 tests. Bump these
+# deliberately, with the test suite as the gate.
+fastapi==0.139.0
+uvicorn==0.51.0
+requests==2.33.0
+mcp[cli]==1.28.1
+pyyaml==6.0.3
+python-hcl2==4.3.5
+pytest==9.0.2
