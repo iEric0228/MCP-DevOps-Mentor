@@ -410,10 +410,7 @@ MODE_TEMPLATES = {
         "chain_of_thought": "Think through this step by step, explaining your reasoning at each stage.",
     },
     "review": {
-        "preamble": (
-            "You are performing a senior-level DevOps review. "
-            "Be direct, precise, and production-focused."
-        ),
+        "preamble": ("You are performing a senior-level DevOps review. Be direct, precise, and production-focused."),
         "structure_hint": (
             "Structure your response as:\n"
             "1. Summary assessment\n"
@@ -425,10 +422,7 @@ MODE_TEMPLATES = {
         "chain_of_thought": "Systematically evaluate each aspect before providing your assessment.",
     },
     "debug": {
-        "preamble": (
-            "You are troubleshooting a DevOps issue. "
-            "Form hypotheses before jumping to solutions."
-        ),
+        "preamble": ("You are troubleshooting a DevOps issue. Form hypotheses before jumping to solutions."),
         "structure_hint": (
             "Structure your response as:\n"
             "1. Clarifying questions (what information is needed)\n"
@@ -440,8 +434,7 @@ MODE_TEMPLATES = {
     },
     "interview": {
         "preamble": (
-            "You are conducting a senior DevOps engineer interview. "
-            "Challenge design decisions and probe for depth."
+            "You are conducting a senior DevOps engineer interview. Challenge design decisions and probe for depth."
         ),
         "structure_hint": (
             "Structure your response as:\n"

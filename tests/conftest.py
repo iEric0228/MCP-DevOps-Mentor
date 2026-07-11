@@ -6,6 +6,7 @@ def tmp_db(tmp_path, monkeypatch):
     db_path = str(tmp_path / "test_mentor.db")
     monkeypatch.setattr("memory.store.DB_PATH", db_path)
     from memory.store import init_db
+
     init_db()
     return db_path
 
@@ -68,7 +69,7 @@ jobs:
 @pytest.fixture
 def sample_terraform_secure():
     return {
-        "main.tf": '''
+        "main.tf": """
 terraform {
   required_providers {
     aws = {
@@ -101,14 +102,14 @@ resource "aws_instance" "web" {
     prevent_destroy = true
   }
 }
-'''
+"""
     }
 
 
 @pytest.fixture
 def sample_terraform_insecure():
     return {
-        "bad.tf": '''
+        "bad.tf": """
 resource "aws_security_group" "open" {
   ingress {
     from_port   = 0
@@ -131,7 +132,7 @@ resource "aws_iam_policy" "admin" {
     }]
   })
 }
-'''
+"""
     }
 
 
@@ -161,7 +162,7 @@ def sample_file_list_minimal():
 @pytest.fixture
 def sample_terraform_with_modules():
     return {
-        "main.tf": '''
+        "main.tf": """
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "~> 5.0"
@@ -176,8 +177,8 @@ resource "aws_instance" "web" {
     Name = "web-server"
   }
 }
-''',
-        "variables.tf": '''
+""",
+        "variables.tf": """
 variable "vpc_cidr" {
   type    = string
   default = "10.0.0.0/16"
@@ -190,8 +191,8 @@ variable "ami_id" {
 variable "db_password" {
   type = string
 }
-''',
-        "outputs.tf": '''
+""",
+        "outputs.tf": """
 output "instance_id" {
   value = aws_instance.web.id
 }
@@ -199,14 +200,14 @@ output "instance_id" {
 output "vpc_id" {
   value = module.vpc.vpc_id
 }
-''',
+""",
     }
 
 
 @pytest.fixture
 def sample_terraform_modules_insecure():
     return {
-        "main.tf": '''
+        "main.tf": """
 module "custom" {
   source = "git::https://github.com/random-org/module.git"
 }
@@ -220,18 +221,18 @@ resource "aws_db_instance" "main" {
   engine         = "postgres"
   instance_class = "db.r5.2xlarge"
 }
-''',
-        "variables.tf": '''
+""",
+        "variables.tf": """
 variable "api_key" {
   type    = string
   default = "sk-test-12345"
 }
-''',
-        "outputs.tf": '''
+""",
+        "outputs.tf": """
 output "api_key" {
   value = var.api_key
 }
-''',
+""",
         "prod.tfvars": 'db_password = "real-secret-password"',
     }
 

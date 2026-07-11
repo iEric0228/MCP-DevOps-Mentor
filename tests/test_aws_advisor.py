@@ -1,4 +1,4 @@
-from reviewers.aws_advisor import review_aws_infrastructure, _detect_aws_services
+from reviewers.aws_advisor import _detect_aws_services, review_aws_infrastructure
 
 
 def test_service_detection():

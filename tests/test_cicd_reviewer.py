@@ -41,10 +41,7 @@ jobs:
 """
     }
     result = review_github_actions(files)
-    pinning_warnings = [
-        f for f in result["detailed_findings"]
-        if "tag reference" in f.get("message", "")
-    ]
+    pinning_warnings = [f for f in result["detailed_findings"] if "tag reference" in f.get("message", "")]
     assert len(pinning_warnings) == 0
 
 
@@ -64,10 +61,7 @@ jobs:
 """
     }
     result = review_github_actions(files)
-    pinning_warnings = [
-        f for f in result["detailed_findings"]
-        if "tag reference" in f.get("message", "")
-    ]
+    pinning_warnings = [f for f in result["detailed_findings"] if "tag reference" in f.get("message", "")]
     assert len(pinning_warnings) >= 1
 
 

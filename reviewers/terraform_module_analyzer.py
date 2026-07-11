@@ -1,7 +1,7 @@
 import re
 from typing import Dict, List
 
-from reviewers.terraform_reviewer import _parse_tf_content, _iter_blocks
+from reviewers.terraform_reviewer import _iter_blocks, _parse_tf_content
 
 CRITICAL = "critical"
 WARNING = "warning"
@@ -57,9 +57,7 @@ RESOURCE_COST_MAP = {
 # ---------------------------------------------------------------------------
 
 
-def _check_module_sources(
-    parsed_files: Dict[str, Dict], all_tf_paths: List[str]
-) -> List[Dict]:
+def _check_module_sources(parsed_files: Dict[str, Dict], all_tf_paths: List[str]) -> List[Dict]:
     """Check that module source paths are valid and from trusted origins."""
     findings: List[Dict] = []
     for filename, parsed in parsed_files.items():
@@ -91,8 +89,7 @@ def _check_module_sources(
                         # Strip leading ./ or ../ to get a relative dir prefix
                         module_dir_prefix = normalized.lstrip("./").lstrip("../")
                         has_files = any(
-                            p.startswith(module_dir_prefix + "/")
-                            or p.startswith(source.rstrip("/") + "/")
+                            p.startswith(module_dir_prefix + "/") or p.startswith(source.rstrip("/") + "/")
                             for p in all_tf_paths
                         )
                         if not has_files:
@@ -107,14 +104,8 @@ def _check_module_sources(
                                 }
                             )
                     # Remote source – warn if not from a well-known origin
-                    elif not any(
-                        source.startswith(prefix)
-                        for prefix in TRUSTED_REGISTRY_PREFIXES
-                    ):
-                        if (
-                            "github.com" not in source
-                            and "terraform.io" not in source
-                        ):
+                    elif not any(source.startswith(prefix) for prefix in TRUSTED_REGISTRY_PREFIXES):
+                        if "github.com" not in source and "terraform.io" not in source:
                             findings.append(
                                 {
                                     "severity": WARNING,
@@ -142,11 +133,7 @@ def _check_module_required_variables(
             if not isinstance(var_block, dict):
                 continue
             for var_name, var_config_list in var_block.items():
-                configs = (
-                    var_config_list
-                    if isinstance(var_config_list, list)
-                    else [var_config_list]
-                )
+                configs = var_config_list if isinstance(var_config_list, list) else [var_config_list]
                 for var_config in configs:
                     has_default = isinstance(var_config, dict) and "default" in var_config
                     module_vars.setdefault(dir_prefix, {})[var_name] = has_default
@@ -169,12 +156,8 @@ def _check_module_required_variables(
                         continue  # Only validate local modules
 
                     # Resolve relative path
-                    caller_dir = (
-                        "/".join(filename.split("/")[:-1]) if "/" in filename else ""
-                    )
-                    resolved_dir = (
-                        source.replace("./", "").replace("../", "").rstrip("/")
-                    )
+                    caller_dir = "/".join(filename.split("/")[:-1]) if "/" in filename else ""
+                    resolved_dir = source.replace("./", "").replace("../", "").rstrip("/")
                     if caller_dir:
                         resolved_dir = caller_dir + "/" + resolved_dir
 
@@ -190,32 +173,22 @@ def _check_module_required_variables(
                         "for_each",
                     }
                     passed_args = set(config.keys()) - meta_keys
-                    required_vars = {
-                        name
-                        for name, has_default in module_vars[resolved_dir].items()
-                        if not has_default
-                    }
+                    required_vars = {name for name, has_default in module_vars[resolved_dir].items() if not has_default}
                     missing = required_vars - passed_args
                     for var in sorted(missing):
                         findings.append(
                             {
                                 "severity": CRITICAL,
-                                "message": (
-                                    f"{filename}: module '{module_name}' missing "
-                                    f"required variable '{var}'"
-                                ),
+                                "message": (f"{filename}: module '{module_name}' missing required variable '{var}'"),
                                 "recommendation": (
-                                    f"Pass variable '{var}' to module '{module_name}' "
-                                    f"-- it has no default value"
+                                    f"Pass variable '{var}' to module '{module_name}' -- it has no default value"
                                 ),
                             }
                         )
     return findings
 
 
-def _check_variable_usage(
-    parsed_files: Dict[str, Dict], raw_files: Dict[str, str]
-) -> List[Dict]:
+def _check_variable_usage(parsed_files: Dict[str, Dict], raw_files: Dict[str, str]) -> List[Dict]:
     """Cross-validate variable declarations against usage."""
     findings: List[Dict] = []
 
@@ -238,14 +211,8 @@ def _check_variable_usage(
             findings.append(
                 {
                     "severity": INFO,
-                    "message": (
-                        f"{declaring_file}: variable '{var_name}' is declared "
-                        f"but never referenced"
-                    ),
-                    "recommendation": (
-                        f"Remove unused variable '{var_name}' or confirm "
-                        f"it is passed to a module"
-                    ),
+                    "message": (f"{declaring_file}: variable '{var_name}' is declared but never referenced"),
+                    "recommendation": (f"Remove unused variable '{var_name}' or confirm it is passed to a module"),
                 }
             )
 
@@ -256,8 +223,7 @@ def _check_variable_usage(
                 {
                     "severity": WARNING,
                     "message": (
-                        f"variable '{var_name}' is referenced (var.{var_name}) "
-                        f"but never declared in any variables file"
+                        f"variable '{var_name}' is referenced (var.{var_name}) but never declared in any variables file"
                     ),
                     "recommendation": f'Add a variable "{var_name}" block in variables.tf',
                 }
@@ -315,52 +281,39 @@ def _check_output_references(
             if not isinstance(output_block, dict):
                 continue
             for output_name, output_config_list in output_block.items():
-                configs = (
-                    output_config_list
-                    if isinstance(output_config_list, list)
-                    else [output_config_list]
-                )
+                configs = output_config_list if isinstance(output_config_list, list) else [output_config_list]
                 for output_config in configs:
                     if not isinstance(output_config, dict):
                         continue
                     value_str = str(output_config.get("value", ""))
-                    refs = re.findall(
-                        r"(?:module|data|local|aws_\w+)\.\w+", value_str
-                    )
+                    refs = re.findall(r"(?:module|data|local|aws_\w+)\.\w+", value_str)
                     for ref in refs:
                         if ref.startswith("module.") and ref not in declared_modules:
                             findings.append(
                                 {
                                     "severity": WARNING,
                                     "message": (
-                                        f"{filename}: output '{output_name}' references "
-                                        f"'{ref}' which is not declared"
+                                        f"{filename}: output '{output_name}' references '{ref}' which is not declared"
                                     ),
                                     "recommendation": f"Verify that {ref} exists or fix the output value reference",
                                 }
                             )
-                        elif (
-                            ref.startswith("data.") and ref not in declared_data_sources
-                        ):
+                        elif ref.startswith("data.") and ref not in declared_data_sources:
                             findings.append(
                                 {
                                     "severity": WARNING,
                                     "message": (
-                                        f"{filename}: output '{output_name}' references "
-                                        f"'{ref}' which is not declared"
+                                        f"{filename}: output '{output_name}' references '{ref}' which is not declared"
                                     ),
                                     "recommendation": f"Verify that {ref} exists or fix the output value reference",
                                 }
                             )
-                        elif (
-                            ref.startswith("local.") and ref not in declared_locals
-                        ):
+                        elif ref.startswith("local.") and ref not in declared_locals:
                             findings.append(
                                 {
                                     "severity": WARNING,
                                     "message": (
-                                        f"{filename}: output '{output_name}' references "
-                                        f"'{ref}' which is not declared"
+                                        f"{filename}: output '{output_name}' references '{ref}' which is not declared"
                                     ),
                                     "recommendation": f"Verify that {ref} exists or fix the output value reference",
                                 }
@@ -396,16 +349,10 @@ def _check_sensitive_variables(parsed_files: Dict[str, Dict]) -> List[Dict]:
                 continue
             for var_name, var_config_list in var_block.items():
                 name_lower = var_name.lower()
-                is_sensitive_name = any(
-                    pat in name_lower for pat in SENSITIVE_VARIABLE_PATTERNS
-                )
+                is_sensitive_name = any(pat in name_lower for pat in SENSITIVE_VARIABLE_PATTERNS)
                 if not is_sensitive_name:
                     continue
-                configs = (
-                    var_config_list
-                    if isinstance(var_config_list, list)
-                    else [var_config_list]
-                )
+                configs = var_config_list if isinstance(var_config_list, list) else [var_config_list]
                 for var_config in configs:
                     if not isinstance(var_config, dict):
                         continue
@@ -432,17 +379,12 @@ def _check_sensitive_variables(parsed_files: Dict[str, Dict]) -> List[Dict]:
                     default_val = var_config.get("default", None)
                     if isinstance(default_val, list):
                         default_val = default_val[0] if default_val else None
-                    if (
-                        default_val is not None
-                        and default_val != ""
-                        and default_val != []
-                    ):
+                    if default_val is not None and default_val != "" and default_val != []:
                         findings.append(
                             {
                                 "severity": CRITICAL,
                                 "message": (
-                                    f"{filename}: variable '{var_name}' has a hardcoded "
-                                    f"default for a sensitive value"
+                                    f"{filename}: variable '{var_name}' has a hardcoded default for a sensitive value"
                                 ),
                                 "recommendation": (
                                     f"Remove the default from '{var_name}' -- sensitive "
@@ -463,23 +405,14 @@ def _check_sensitive_outputs(
             if not isinstance(output_block, dict):
                 continue
             for output_name, output_config_list in output_block.items():
-                configs = (
-                    output_config_list
-                    if isinstance(output_config_list, list)
-                    else [output_config_list]
-                )
+                configs = output_config_list if isinstance(output_config_list, list) else [output_config_list]
                 for output_config in configs:
                     if not isinstance(output_config, dict):
                         continue
                     value_str = str(output_config.get("value", "")).lower()
-                    is_sensitive = any(
-                        pat in value_str for pat in SENSITIVE_VARIABLE_PATTERNS
-                    )
+                    is_sensitive = any(pat in value_str for pat in SENSITIVE_VARIABLE_PATTERNS)
                     if not is_sensitive:
-                        is_sensitive = any(
-                            pat in output_name.lower()
-                            for pat in SENSITIVE_VARIABLE_PATTERNS
-                        )
+                        is_sensitive = any(pat in output_name.lower() for pat in SENSITIVE_VARIABLE_PATTERNS)
                     if not is_sensitive:
                         continue
 
@@ -552,20 +485,16 @@ def _check_untrusted_module_sources(parsed_files: Dict[str, Dict]) -> List[Dict]
                         version = version[0] if version else ""
 
                     # Git URL without ref pinning
-                    if "git::" in source or (
-                        "github.com" in source and "git" in source
-                    ):
+                    if "git::" in source or ("github.com" in source and "git" in source):
                         if "?ref=" not in source and not version:
                             findings.append(
                                 {
                                     "severity": WARNING,
                                     "message": (
-                                        f"{filename}: module '{module_name}' uses git "
-                                        f"source without version pinning"
+                                        f"{filename}: module '{module_name}' uses git source without version pinning"
                                     ),
                                     "recommendation": (
-                                        "Pin module to a specific git tag or commit hash "
-                                        "using ?ref=v1.0.0"
+                                        "Pin module to a specific git tag or commit hash using ?ref=v1.0.0"
                                     ),
                                 }
                             )
@@ -581,13 +510,9 @@ def _check_untrusted_module_sources(parsed_files: Dict[str, Dict]) -> List[Dict]
                             findings.append(
                                 {
                                     "severity": WARNING,
-                                    "message": (
-                                        f"{filename}: module '{module_name}' has no "
-                                        f"version constraint"
-                                    ),
+                                    "message": (f"{filename}: module '{module_name}' has no version constraint"),
                                     "recommendation": (
-                                        "Pin registry modules with a version constraint "
-                                        '(e.g., version = "~> 3.0")'
+                                        'Pin registry modules with a version constraint (e.g., version = "~> 3.0")'
                                     ),
                                 }
                             )
@@ -697,10 +622,7 @@ def analyze_terraform_modules(files: Dict[str, str]) -> Dict:
             all_findings.append(
                 {
                     "severity": INFO,
-                    "message": (
-                        f"{name}: could not parse HCL2 "
-                        f"(syntax issue or python-hcl2 unavailable)"
-                    ),
+                    "message": (f"{name}: could not parse HCL2 (syntax issue or python-hcl2 unavailable)"),
                     "recommendation": "Validate Terraform syntax with 'terraform validate'",
                 }
             )

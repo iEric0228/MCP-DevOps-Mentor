@@ -15,9 +15,9 @@ pure Python template logic (no LLM API calls).
 """
 
 from enhancer.domain_rules import (
-    DOMAIN_KEYWORDS,
-    DIMENSION_INJECTIONS,
     CLOUD_PROVIDER_CONTEXT,
+    DIMENSION_INJECTIONS,
+    DOMAIN_KEYWORDS,
     MODE_TEMPLATES,
 )
 from enhancer.skill_adapter import get_skill_adaptation
@@ -66,20 +66,12 @@ def enhance_prompt(
     detected_domains = _detect_domains(prompt_lower)
 
     # Stage 2: Dimension injection
-    focus_list = (
-        [f.strip() for f in focus_areas.split(",") if f.strip()]
-        if focus_areas
-        else []
-    )
-    injections, dimensions_added = _get_missing_dimensions(
-        prompt_lower, detected_domains, focus_list
-    )
+    focus_list = [f.strip() for f in focus_areas.split(",") if f.strip()] if focus_areas else []
+    injections, dimensions_added = _get_missing_dimensions(prompt_lower, detected_domains, focus_list)
 
     # Stage 3: Cloud provider context
     resolved_provider = _resolve_cloud_provider(prompt_lower, cloud_provider)
-    cloud_context = CLOUD_PROVIDER_CONTEXT.get(
-        resolved_provider, CLOUD_PROVIDER_CONTEXT["aws"]
-    )
+    cloud_context = CLOUD_PROVIDER_CONTEXT.get(resolved_provider, CLOUD_PROVIDER_CONTEXT["aws"])
 
     # Stage 4: Skill-level adaptation
     skill_adaptation = get_skill_adaptation(detected_domains)
@@ -117,9 +109,7 @@ def enhance_prompt(
             "dimensions_added": dimensions_added,
             "detected_domains": detected_domains,
         },
-        "reasoning": _build_reasoning(
-            detected_domains, dimensions_added, skill_adaptation, mode
-        ),
+        "reasoning": _build_reasoning(detected_domains, dimensions_added, skill_adaptation, mode),
     }
 
 
@@ -174,9 +164,7 @@ def _get_missing_dimensions(
                 continue
 
             # Check if prompt already covers this dimension
-            already_covered = any(
-                kw in prompt_lower for kw in dim_config["check_keywords"]
-            )
+            already_covered = any(kw in prompt_lower for kw in dim_config["check_keywords"])
 
             if not already_covered:
                 injections.append(dim_config["injection"])
@@ -259,18 +247,12 @@ def _build_reasoning(
     parts.append(f"Detected domains: {', '.join(detected_domains)}.")
 
     if dimensions_added:
-        parts.append(
-            f"Added {len(dimensions_added)} missing consideration(s): "
-            f"{', '.join(dimensions_added)}."
-        )
+        parts.append(f"Added {len(dimensions_added)} missing consideration(s): {', '.join(dimensions_added)}.")
     else:
-        parts.append(
-            "The prompt already covers the key dimensions for the detected domains."
-        )
+        parts.append("The prompt already covers the key dimensions for the detected domains.")
 
     parts.append(
-        f"Adapted for {skill_adaptation['effective_level']}-level user "
-        f"({skill_adaptation['detail_level']} detail)."
+        f"Adapted for {skill_adaptation['effective_level']}-level user ({skill_adaptation['detail_level']} detail)."
     )
     parts.append(f"Structured for {mode} mode.")
 

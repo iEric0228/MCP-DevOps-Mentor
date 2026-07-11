@@ -4,6 +4,7 @@ from typing import Dict, List
 
 try:
     import hcl2
+
     HCL2_AVAILABLE = True
 except ImportError:
     HCL2_AVAILABLE = False
@@ -32,18 +33,19 @@ def _iter_blocks(data, key: str):
 def _check_hardcoded_secrets(content: str, filename: str) -> List[Dict]:
     findings = []
     secret_patterns = [
-        (r'(?i)(password|secret|api_key|access_key|token)\s*=\s*"[^${}][^"]*"',
-         "Possible hardcoded credential"),
-        (r'AKIA[0-9A-Z]{16}', "AWS Access Key ID detected"),
+        (r'(?i)(password|secret|api_key|access_key|token)\s*=\s*"[^${}][^"]*"', "Possible hardcoded credential"),
+        (r"AKIA[0-9A-Z]{16}", "AWS Access Key ID detected"),
         (r'(?i)secret_key\s*=\s*"[^${}]', "Hardcoded AWS secret key"),
     ]
     for pattern, message in secret_patterns:
         if re.search(pattern, content):
-            findings.append({
-                "severity": CRITICAL,
-                "message": f"{filename}: {message}",
-                "recommendation": "Use variables with sensitive=true or reference AWS Secrets Manager/SSM Parameter Store",
-            })
+            findings.append(
+                {
+                    "severity": CRITICAL,
+                    "message": f"{filename}: {message}",
+                    "recommendation": "Use variables with sensitive=true or reference AWS Secrets Manager/SSM Parameter Store",
+                }
+            )
     return findings
 
 
@@ -65,18 +67,22 @@ def _check_backend_config(parsed: Dict, filename: str) -> List[Dict]:
                     if isinstance(s3_config, list):
                         s3_config = s3_config[0] if s3_config else {}
                     if isinstance(s3_config, dict) and "dynamodb_table" not in s3_config:
-                        findings.append({
-                            "severity": WARNING,
-                            "message": f"{filename}: S3 backend without DynamoDB state locking",
-                            "recommendation": "Add dynamodb_table for state locking to prevent concurrent modifications",
-                        })
+                        findings.append(
+                            {
+                                "severity": WARNING,
+                                "message": f"{filename}: S3 backend without DynamoDB state locking",
+                                "recommendation": "Add dynamodb_table for state locking to prevent concurrent modifications",
+                            }
+                        )
 
     if not has_backend:
-        findings.append({
-            "severity": CRITICAL,
-            "message": f"{filename}: no remote backend configured (using local state)",
-            "recommendation": "Configure a remote backend (S3 + DynamoDB) for team collaboration and state safety",
-        })
+        findings.append(
+            {
+                "severity": CRITICAL,
+                "message": f"{filename}: no remote backend configured (using local state)",
+                "recommendation": "Configure a remote backend (S3 + DynamoDB) for team collaboration and state safety",
+            }
+        )
     return findings
 
 
@@ -92,11 +98,13 @@ def _check_provider_versions(parsed: Dict, filename: str) -> List[Dict]:
             has_version_constraint = True
 
     if not has_version_constraint:
-        findings.append({
-            "severity": WARNING,
-            "message": f"{filename}: no required_providers with version constraints",
-            "recommendation": "Pin provider versions to prevent unexpected upgrades",
-        })
+        findings.append(
+            {
+                "severity": WARNING,
+                "message": f"{filename}: no required_providers with version constraints",
+                "recommendation": "Pin provider versions to prevent unexpected upgrades",
+            }
+        )
     return findings
 
 
@@ -113,11 +121,13 @@ def _check_resource_tags(parsed: Dict, filename: str) -> List[Dict]:
                     continue
                 for name, config in instance.items():
                     if isinstance(config, dict) and "tags" not in config:
-                        findings.append({
-                            "severity": INFO,
-                            "message": f"{filename}: {resource_type}.{name} has no tags",
-                            "recommendation": "Add tags for cost allocation and resource management",
-                        })
+                        findings.append(
+                            {
+                                "severity": INFO,
+                                "message": f"{filename}: {resource_type}.{name} has no tags",
+                                "recommendation": "Add tags for cost allocation and resource management",
+                            }
+                        )
     return findings
 
 
@@ -135,11 +145,13 @@ def _check_security_groups(parsed: Dict, filename: str) -> List[Dict]:
                     continue
                 for name, config in instance.items():
                     if "0.0.0.0/0" in str(config):
-                        findings.append({
-                            "severity": CRITICAL,
-                            "message": f"{filename}: {resource_type}.{name} allows 0.0.0.0/0",
-                            "recommendation": "Restrict CIDR blocks to known IP ranges",
-                        })
+                        findings.append(
+                            {
+                                "severity": CRITICAL,
+                                "message": f"{filename}: {resource_type}.{name} allows 0.0.0.0/0",
+                                "recommendation": "Restrict CIDR blocks to known IP ranges",
+                            }
+                        )
     return findings
 
 
@@ -157,17 +169,21 @@ def _check_s3_security(parsed: Dict, filename: str) -> List[Dict]:
             for name, config in bucket.items():
                 config_str = str(config)
                 if "server_side_encryption_configuration" not in config_str:
-                    findings.append({
-                        "severity": WARNING,
-                        "message": f"{filename}: aws_s3_bucket.{name} may lack encryption",
-                        "recommendation": "Enable server-side encryption (SSE-S3 or SSE-KMS)",
-                    })
+                    findings.append(
+                        {
+                            "severity": WARNING,
+                            "message": f"{filename}: aws_s3_bucket.{name} may lack encryption",
+                            "recommendation": "Enable server-side encryption (SSE-S3 or SSE-KMS)",
+                        }
+                    )
                 if "versioning" not in config_str:
-                    findings.append({
-                        "severity": WARNING,
-                        "message": f"{filename}: aws_s3_bucket.{name} may lack versioning",
-                        "recommendation": "Enable versioning for data protection and recovery",
-                    })
+                    findings.append(
+                        {
+                            "severity": WARNING,
+                            "message": f"{filename}: aws_s3_bucket.{name} may lack versioning",
+                            "recommendation": "Enable versioning for data protection and recovery",
+                        }
+                    )
     return findings
 
 
@@ -204,11 +220,13 @@ def _contains_wildcard_action(node) -> bool:
 def _check_iam_policies(parsed: Dict, filename: str) -> List[Dict]:
     findings = []
     if _contains_wildcard_action(parsed):
-        findings.append({
-            "severity": CRITICAL,
-            "message": f"{filename}: IAM policy may contain wildcard (*) actions",
-            "recommendation": "Follow least-privilege: specify exact actions needed instead of '*'",
-        })
+        findings.append(
+            {
+                "severity": CRITICAL,
+                "message": f"{filename}: IAM policy may contain wildcard (*) actions",
+                "recommendation": "Follow least-privilege: specify exact actions needed instead of '*'",
+            }
+        )
     return findings
 
 
@@ -227,11 +245,13 @@ def _check_lifecycle_rules(parsed: Dict, filename: str) -> List[Dict]:
                     continue
                 for name, config in instance.items():
                     if isinstance(config, dict) and "lifecycle" not in config:
-                        findings.append({
-                            "severity": INFO,
-                            "message": f"{filename}: {resource_type}.{name} has no lifecycle block",
-                            "recommendation": "Consider adding lifecycle { prevent_destroy = true } for stateful resources",
-                        })
+                        findings.append(
+                            {
+                                "severity": INFO,
+                                "message": f"{filename}: {resource_type}.{name} has no lifecycle block",
+                                "recommendation": "Consider adding lifecycle { prevent_destroy = true } for stateful resources",
+                            }
+                        )
     return findings
 
 
@@ -255,11 +275,13 @@ def review_terraform(files: Dict[str, str]) -> Dict:
 
         parsed = _parse_tf_content(content)
         if not parsed:
-            all_findings.append({
-                "severity": INFO,
-                "message": f"{name}: could not parse HCL2 (syntax issue or pyhcl2 unavailable)",
-                "recommendation": "Validate Terraform syntax with 'terraform validate'",
-            })
+            all_findings.append(
+                {
+                    "severity": INFO,
+                    "message": f"{name}: could not parse HCL2 (syntax issue or pyhcl2 unavailable)",
+                    "recommendation": "Validate Terraform syntax with 'terraform validate'",
+                }
+            )
             continue
 
         for resource_block in _iter_blocks(parsed, "resource"):

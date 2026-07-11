@@ -5,49 +5,36 @@ Reads the user profile (read-only) and translates skill levels into
 adaptation parameters that control tone, detail level, and output hints.
 """
 
-from memory.store import load_profile
 from memory.models import SKILL_LEVELS
-
+from memory.store import load_profile
 
 # Maps skill levels to enhancement adaptation parameters.
 LEVEL_ADAPTATION = {
     "unknown": {
         "detail_level": "detailed",
-        "tone": (
-            "Explain concepts thoroughly. Define technical terms. "
-            "Provide step-by-step guidance."
-        ),
+        "tone": ("Explain concepts thoroughly. Define technical terms. Provide step-by-step guidance."),
         "output_hint": "Include example commands or configuration snippets where helpful.",
     },
     "beginner": {
         "detail_level": "detailed",
         "tone": (
-            "Explain the reasoning behind each recommendation. "
-            "Avoid assuming prior knowledge of advanced patterns."
+            "Explain the reasoning behind each recommendation. Avoid assuming prior knowledge of advanced patterns."
         ),
         "output_hint": "Include example commands or configuration snippets where helpful.",
     },
     "developing": {
         "detail_level": "moderate",
-        "tone": (
-            "Focus on best practices and production considerations. "
-            "Brief explanations are acceptable."
-        ),
+        "tone": ("Focus on best practices and production considerations. Brief explanations are acceptable."),
         "output_hint": "Use structured output with clear sections.",
     },
     "solid": {
         "detail_level": "concise",
-        "tone": (
-            "Be direct and focus on advanced patterns, edge cases, and trade-offs."
-        ),
+        "tone": ("Be direct and focus on advanced patterns, edge cases, and trade-offs."),
         "output_hint": "Highlight non-obvious considerations and advanced optimizations.",
     },
     "advanced": {
         "detail_level": "concise",
-        "tone": (
-            "Focus on architecture-level decisions, trade-offs, and cutting-edge practices. "
-            "Skip basics."
-        ),
+        "tone": ("Focus on architecture-level decisions, trade-offs, and cutting-edge practices. Skip basics."),
         "output_hint": "Prioritize trade-off analysis and production battle scars.",
     },
 }

@@ -1,5 +1,4 @@
-import pytest
-from reviewers.terraform_reviewer import review_terraform, _check_hardcoded_secrets
+from reviewers.terraform_reviewer import _check_hardcoded_secrets, review_terraform
 
 
 def test_hardcoded_secret_detection():
@@ -50,12 +49,12 @@ def test_iam_wildcard_detection(sample_terraform_insecure):
 
 def test_missing_backend():
     files = {
-        "main.tf": '''
+        "main.tf": """
 resource "aws_instance" "web" {
   ami           = "ami-123"
   instance_type = "t3.micro"
 }
-'''
+"""
     }
     result = review_terraform(files)
     assert any("backend" in r.lower() for r in result["risks"])
@@ -90,12 +89,12 @@ def test_empty_tf_files():
 def test_non_tf_files_ignored():
     files = {
         "readme.md": "# Hello",
-        "main.tf": '''
+        "main.tf": """
 resource "aws_instance" "web" {
   ami           = "ami-123"
   instance_type = "t3.micro"
 }
-''',
+""",
     }
     result = review_terraform(files)
     assert "readme.md" not in result["files_reviewed"]

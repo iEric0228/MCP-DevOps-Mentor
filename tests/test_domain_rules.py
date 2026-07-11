@@ -1,15 +1,21 @@
 from enhancer.domain_rules import (
-    DOMAIN_KEYWORDS,
-    DIMENSION_INJECTIONS,
     CLOUD_PROVIDER_CONTEXT,
+    DIMENSION_INJECTIONS,
+    DOMAIN_KEYWORDS,
     MODE_TEMPLATES,
 )
 
 
 def test_all_domains_have_keywords():
     expected_domains = {
-        "ci_cd", "docker", "terraform", "aws",
-        "security", "observability", "networking", "cost",
+        "ci_cd",
+        "docker",
+        "terraform",
+        "aws",
+        "security",
+        "observability",
+        "networking",
+        "cost",
     }
     assert set(DOMAIN_KEYWORDS.keys()) == expected_domains
 
@@ -21,36 +27,26 @@ def test_no_empty_keyword_lists():
 
 def test_all_injection_domains_exist_in_keywords():
     for domain in DIMENSION_INJECTIONS:
-        assert domain in DOMAIN_KEYWORDS, (
-            f"Injection domain '{domain}' not in DOMAIN_KEYWORDS"
-        )
+        assert domain in DOMAIN_KEYWORDS, f"Injection domain '{domain}' not in DOMAIN_KEYWORDS"
 
 
 def test_dimension_configs_have_required_keys():
     for domain, dimensions in DIMENSION_INJECTIONS.items():
         for dim_name, dim_config in dimensions.items():
-            assert "check_keywords" in dim_config, (
-                f"{domain}:{dim_name} missing check_keywords"
-            )
-            assert "injection" in dim_config, (
-                f"{domain}:{dim_name} missing injection"
-            )
+            assert "check_keywords" in dim_config, f"{domain}:{dim_name} missing check_keywords"
+            assert "injection" in dim_config, f"{domain}:{dim_name} missing injection"
 
 
 def test_no_empty_check_keywords():
     for domain, dimensions in DIMENSION_INJECTIONS.items():
         for dim_name, dim_config in dimensions.items():
-            assert len(dim_config["check_keywords"]) > 0, (
-                f"{domain}:{dim_name} has empty check_keywords"
-            )
+            assert len(dim_config["check_keywords"]) > 0, f"{domain}:{dim_name} has empty check_keywords"
 
 
 def test_no_empty_injection_texts():
     for domain, dimensions in DIMENSION_INJECTIONS.items():
         for dim_name, dim_config in dimensions.items():
-            assert len(dim_config["injection"].strip()) > 0, (
-                f"{domain}:{dim_name} has empty injection text"
-            )
+            assert len(dim_config["injection"].strip()) > 0, f"{domain}:{dim_name} has empty injection text"
 
 
 def test_cloud_providers_all_present():
@@ -75,6 +71,4 @@ def test_mode_templates_have_required_keys():
 def test_mode_templates_values_not_empty():
     for mode_name, template in MODE_TEMPLATES.items():
         for key, value in template.items():
-            assert len(value.strip()) > 0, (
-                f"Mode '{mode_name}' has empty '{key}'"
-            )
+            assert len(value.strip()) > 0, f"Mode '{mode_name}' has empty '{key}'"

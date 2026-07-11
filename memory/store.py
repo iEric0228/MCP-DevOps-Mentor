@@ -1,6 +1,7 @@
-import sqlite3
 import json
-from memory.models import UserProfile, SkillState
+import sqlite3
+
+from memory.models import SkillState, UserProfile
 
 DB_PATH = "mentor_memory.db"
 
