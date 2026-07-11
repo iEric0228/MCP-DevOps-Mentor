@@ -1,4 +1,4 @@
-from mentor.mode_loader import load_mode_prompt, get_system_prompt
+from mentor.mode_loader import get_system_prompt, load_mode_prompt
 
 
 def test_load_mentor_mode():

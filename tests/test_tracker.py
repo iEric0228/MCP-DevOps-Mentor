@@ -1,13 +1,11 @@
-import pytest
+from memory.models import SKILL_LEVELS, SkillState, UserProfile
 from memory.tracker import (
-    compute_level,
-    update_skills,
-    get_learning_recommendations,
-    WEIGHTED_SKILL_MAP,
-    LEVEL_THRESHOLDS,
     MAX_HISTORY,
+    WEIGHTED_SKILL_MAP,
+    compute_level,
+    get_learning_recommendations,
+    update_skills,
 )
-from memory.models import SkillState, UserProfile, SKILL_LEVELS
 
 
 def test_compute_level_unknown():
@@ -109,29 +107,35 @@ def test_get_learning_recommendations_empty_profile():
 
 
 def test_get_learning_recommendations_weak_skills():
-    profile = UserProfile(skills={
-        "docker": SkillState(level="beginner", evidence_count=1, weighted_score=2.0),
-        "aws": SkillState(level="solid", evidence_count=10, weighted_score=20.0),
-    })
+    profile = UserProfile(
+        skills={
+            "docker": SkillState(level="beginner", evidence_count=1, weighted_score=2.0),
+            "aws": SkillState(level="solid", evidence_count=10, weighted_score=20.0),
+        }
+    )
     recs = get_learning_recommendations(profile)
     assert "docker" in recs["weak_skills"]
     assert "aws" in recs["strong_skills"]
 
 
 def test_get_learning_recommendations_prerequisites():
-    profile = UserProfile(skills={
-        "security": SkillState(level="unknown", evidence_count=0, weighted_score=0.0),
-        # aws is a prerequisite for security but is missing
-    })
+    profile = UserProfile(
+        skills={
+            "security": SkillState(level="unknown", evidence_count=0, weighted_score=0.0),
+            # aws is a prerequisite for security but is missing
+        }
+    )
     recs = get_learning_recommendations(profile)
     assert "aws" in recs["prerequisite_gaps"]
 
 
 def test_get_learning_recommendations_focus_order():
-    profile = UserProfile(skills={
-        "terraform": SkillState(level="beginner", evidence_count=1, weighted_score=2.0),
-        # aws is a prereq for terraform and is missing
-    })
+    profile = UserProfile(
+        skills={
+            "terraform": SkillState(level="beginner", evidence_count=1, weighted_score=2.0),
+            # aws is a prereq for terraform and is missing
+        }
+    )
     recs = get_learning_recommendations(profile)
     # Prerequisites should come before the dependent skill
     if "aws" in recs["recommended_focus"] and "terraform" in recs["recommended_focus"]:
@@ -141,9 +145,11 @@ def test_get_learning_recommendations_focus_order():
 
 
 def test_get_learning_recommendations_untracked_skills():
-    profile = UserProfile(skills={
-        "docker": SkillState(level="solid", evidence_count=10, weighted_score=20.0),
-    })
+    profile = UserProfile(
+        skills={
+            "docker": SkillState(level="solid", evidence_count=10, weighted_score=20.0),
+        }
+    )
     recs = get_learning_recommendations(profile)
     all_skills = set(WEIGHTED_SKILL_MAP.keys())
     # All untracked skills should appear as weak

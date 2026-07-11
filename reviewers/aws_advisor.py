@@ -32,52 +32,64 @@ def _cost_checks(detected_resources: List[str], terraform_findings: List[Dict]) 
     services = _detect_aws_services(detected_resources)
 
     if "aws_nat_gateway" in detected_resources:
-        findings.append({
-            "severity": WARNING,
-            "category": "cost",
-            "message": "NAT Gateway detected -- high per-hour + per-GB cost",
-            "recommendation": "Consider NAT instances for dev/staging, or VPC endpoints to reduce NAT traffic",
-        })
+        findings.append(
+            {
+                "severity": WARNING,
+                "category": "cost",
+                "message": "NAT Gateway detected -- high per-hour + per-GB cost",
+                "recommendation": "Consider NAT instances for dev/staging, or VPC endpoints to reduce NAT traffic",
+            }
+        )
 
     if services.get("ec2") and "aws_autoscaling_group" not in detected_resources:
-        findings.append({
-            "severity": WARNING,
-            "category": "cost",
-            "message": "EC2 instances without Auto Scaling Group detected",
-            "recommendation": "Use Auto Scaling to right-size capacity and reduce cost during low demand",
-        })
+        findings.append(
+            {
+                "severity": WARNING,
+                "category": "cost",
+                "message": "EC2 instances without Auto Scaling Group detected",
+                "recommendation": "Use Auto Scaling to right-size capacity and reduce cost during low demand",
+            }
+        )
 
     if services.get("ec2") and "aws_spot_instance_request" not in detected_resources:
-        findings.append({
-            "severity": INFO,
-            "category": "cost",
-            "message": "No spot instances detected",
-            "recommendation": "Consider spot instances for fault-tolerant workloads (up to 90% savings)",
-        })
+        findings.append(
+            {
+                "severity": INFO,
+                "category": "cost",
+                "message": "No spot instances detected",
+                "recommendation": "Consider spot instances for fault-tolerant workloads (up to 90% savings)",
+            }
+        )
 
     if "aws_eip" in detected_resources:
-        findings.append({
-            "severity": INFO,
-            "category": "cost",
-            "message": "Elastic IPs detected -- unattached EIPs incur charges",
-            "recommendation": "Audit EIPs and release any that are not attached to running instances",
-        })
+        findings.append(
+            {
+                "severity": INFO,
+                "category": "cost",
+                "message": "Elastic IPs detected -- unattached EIPs incur charges",
+                "recommendation": "Audit EIPs and release any that are not attached to running instances",
+            }
+        )
 
     if services.get("rds"):
-        findings.append({
-            "severity": INFO,
-            "category": "cost",
-            "message": "RDS instance detected",
-            "recommendation": "Consider Reserved Instances for production RDS, and Aurora Serverless for variable workloads",
-        })
+        findings.append(
+            {
+                "severity": INFO,
+                "category": "cost",
+                "message": "RDS instance detected",
+                "recommendation": "Consider Reserved Instances for production RDS, and Aurora Serverless for variable workloads",
+            }
+        )
 
     if services.get("ecs") or services.get("eks"):
-        findings.append({
-            "severity": INFO,
-            "category": "cost",
-            "message": "Container orchestration detected",
-            "recommendation": "Use Fargate Spot for non-critical ECS tasks, or Karpenter for EKS node optimization",
-        })
+        findings.append(
+            {
+                "severity": INFO,
+                "category": "cost",
+                "message": "Container orchestration detected",
+                "recommendation": "Use Fargate Spot for non-critical ECS tasks, or Karpenter for EKS node optimization",
+            }
+        )
 
     return findings
 
@@ -87,52 +99,64 @@ def _security_checks(detected_resources: List[str], terraform_findings: List[Dic
     services = _detect_aws_services(detected_resources)
 
     if services.get("vpc") and "aws_flow_log" not in detected_resources:
-        findings.append({
-            "severity": WARNING,
-            "category": "security",
-            "message": "VPC detected without flow logs",
-            "recommendation": "Enable VPC Flow Logs for network traffic monitoring and security analysis",
-        })
+        findings.append(
+            {
+                "severity": WARNING,
+                "category": "security",
+                "message": "VPC detected without flow logs",
+                "recommendation": "Enable VPC Flow Logs for network traffic monitoring and security analysis",
+            }
+        )
 
     if "aws_cloudtrail" not in detected_resources:
-        findings.append({
-            "severity": CRITICAL,
-            "category": "security",
-            "message": "No CloudTrail configuration detected in Terraform",
-            "recommendation": "Enable CloudTrail for API audit logging across all regions",
-        })
+        findings.append(
+            {
+                "severity": CRITICAL,
+                "category": "security",
+                "message": "No CloudTrail configuration detected in Terraform",
+                "recommendation": "Enable CloudTrail for API audit logging across all regions",
+            }
+        )
 
     if services.get("rds"):
-        findings.append({
-            "severity": WARNING,
-            "category": "security",
-            "message": "Verify RDS encryption at rest is enabled",
-            "recommendation": "Set storage_encrypted = true on all RDS instances",
-        })
+        findings.append(
+            {
+                "severity": WARNING,
+                "category": "security",
+                "message": "Verify RDS encryption at rest is enabled",
+                "recommendation": "Set storage_encrypted = true on all RDS instances",
+            }
+        )
 
     if services.get("lambda"):
-        findings.append({
-            "severity": INFO,
-            "category": "security",
-            "message": "Lambda functions detected",
-            "recommendation": "Ensure Lambda functions run inside VPC for sensitive workloads, use environment variable encryption",
-        })
+        findings.append(
+            {
+                "severity": INFO,
+                "category": "security",
+                "message": "Lambda functions detected",
+                "recommendation": "Ensure Lambda functions run inside VPC for sensitive workloads, use environment variable encryption",
+            }
+        )
 
     if "aws_iam_user" in detected_resources:
-        findings.append({
-            "severity": WARNING,
-            "category": "security",
-            "message": "IAM users created in Terraform -- prefer IAM roles with federation",
-            "recommendation": "Use IAM Identity Center (SSO) with federated roles instead of IAM users",
-        })
+        findings.append(
+            {
+                "severity": WARNING,
+                "category": "security",
+                "message": "IAM users created in Terraform -- prefer IAM roles with federation",
+                "recommendation": "Use IAM Identity Center (SSO) with federated roles instead of IAM users",
+            }
+        )
 
     if services.get("s3") and "aws_s3_bucket_public_access_block" not in detected_resources:
-        findings.append({
-            "severity": CRITICAL,
-            "category": "security",
-            "message": "S3 buckets without public access block",
-            "recommendation": "Add aws_s3_bucket_public_access_block to all buckets",
-        })
+        findings.append(
+            {
+                "severity": CRITICAL,
+                "category": "security",
+                "message": "S3 buckets without public access block",
+                "recommendation": "Add aws_s3_bucket_public_access_block to all buckets",
+            }
+        )
 
     return findings
 

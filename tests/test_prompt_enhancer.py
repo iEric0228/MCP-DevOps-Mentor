@@ -1,13 +1,10 @@
-import pytest
 from enhancer.prompt_enhancer import (
-    enhance_prompt,
-    _detect_domains,
-    _resolve_cloud_provider,
-    _get_missing_dimensions,
     MAX_INJECTIONS,
+    _detect_domains,
+    _get_missing_dimensions,
+    _resolve_cloud_provider,
+    enhance_prompt,
 )
-from enhancer.domain_rules import DIMENSION_INJECTIONS
-
 
 # --- Domain Detection Tests ---
 
@@ -88,9 +85,7 @@ def test_explicit_overrides_detection():
 
 def test_missing_dimensions_injected():
     """A bare ci_cd prompt should get security, rollback, caching, testing injections."""
-    injections, added = _get_missing_dimensions(
-        "set up a pipeline", ["ci_cd"], []
-    )
+    injections, added = _get_missing_dimensions("set up a pipeline", ["ci_cd"], [])
     assert len(injections) > 0
     dim_names = [d.split(":")[1] for d in added]
     assert "security" in dim_names
@@ -101,9 +96,7 @@ def test_missing_dimensions_injected():
 
 def test_already_covered_dimension_skipped():
     """A prompt mentioning 'caching' should not get the caching injection."""
-    injections, added = _get_missing_dimensions(
-        "set up a pipeline with caching", ["ci_cd"], []
-    )
+    injections, added = _get_missing_dimensions("set up a pipeline with caching", ["ci_cd"], [])
     dim_names = [d.split(":")[1] for d in added]
     assert "caching" not in dim_names
 
@@ -118,9 +111,7 @@ def test_all_dimensions_covered_no_injection():
 
 def test_focus_areas_filter():
     """Only dimensions matching focus_areas should be injected."""
-    injections, added = _get_missing_dimensions(
-        "set up a pipeline", ["ci_cd"], ["security"]
-    )
+    injections, added = _get_missing_dimensions("set up a pipeline", ["ci_cd"], ["security"])
     dim_names = [d.split(":")[1] for d in added]
     assert "security" in dim_names
     # Other dimensions should NOT be present
@@ -131,17 +122,13 @@ def test_focus_areas_filter():
 
 def test_focus_areas_empty_injects_all():
     """Empty focus_areas should inject all missing dimensions."""
-    injections, added = _get_missing_dimensions(
-        "set up a pipeline", ["ci_cd"], []
-    )
+    injections, added = _get_missing_dimensions("set up a pipeline", ["ci_cd"], [])
     assert len(added) >= 3  # ci_cd has 4 dimensions, all should be missing
 
 
 def test_cross_domain_dedup():
     """Security dimension should only be injected once even if multiple domains have it."""
-    injections, added = _get_missing_dimensions(
-        "set up infrastructure", ["ci_cd", "aws"], []
-    )
+    injections, added = _get_missing_dimensions("set up infrastructure", ["ci_cd", "aws"], [])
     security_dims = [d for d in added if d.endswith(":security")]
     assert len(security_dims) <= 1
 
@@ -285,9 +272,7 @@ def test_enhance_prompt_gcp_context(tmp_db):
 
 def test_enhance_prompt_with_focus_areas(tmp_db):
     result = enhance_prompt("set up a pipeline", focus_areas="security,cost")
-    dim_names = [
-        d.split(":")[1] for d in result["context_injected"]["dimensions_added"]
-    ]
+    dim_names = [d.split(":")[1] for d in result["context_injected"]["dimensions_added"]]
     # Only security and cost should be present (if they were missing)
     for dim in dim_names:
         assert dim in ("security", "cost")
@@ -324,7 +309,5 @@ def test_prompt_with_special_characters(tmp_db):
 
 def test_prompt_with_multiple_cloud_mentions(tmp_db):
     """When prompt mentions multiple clouds, explicit param wins."""
-    result = enhance_prompt(
-        "migrate from aws to azure", cloud_provider="azure"
-    )
+    result = enhance_prompt("migrate from aws to azure", cloud_provider="azure")
     assert result["context_injected"]["cloud_provider"] == "azure"

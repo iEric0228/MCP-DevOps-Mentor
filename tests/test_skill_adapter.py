@@ -1,9 +1,8 @@
-import pytest
 from enhancer.skill_adapter import (
-    get_skill_adaptation,
-    LEVEL_ADAPTATION,
     DOMAIN_TO_SKILL,
+    LEVEL_ADAPTATION,
     USER_LEVEL_MAP,
+    get_skill_adaptation,
 )
 from memory.models import SkillState, UserProfile
 from memory.store import save_profile
@@ -112,7 +111,13 @@ def test_all_adaptation_levels_have_required_keys():
 def test_domain_to_skill_mapping_coverage():
     """All enhancer domains should map to a tracked skill."""
     expected_domains = {
-        "ci_cd", "docker", "terraform", "aws",
-        "security", "observability", "networking", "cost",
+        "ci_cd",
+        "docker",
+        "terraform",
+        "aws",
+        "security",
+        "observability",
+        "networking",
+        "cost",
     }
     assert set(DOMAIN_TO_SKILL.keys()) == expected_domains

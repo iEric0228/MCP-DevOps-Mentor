@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import Dict, List
 
 
 def analyze_repo(file_paths: List[str]) -> Dict:
@@ -8,9 +8,7 @@ def analyze_repo(file_paths: List[str]) -> Dict:
     has_docker = "Dockerfile" in file_paths
     has_compose = "docker-compose.yml" in file_paths
     has_ci = any(p.startswith(".github/workflows/") for p in file_paths)
-    has_terraform = any(
-        p.endswith(".tf") or p.startswith("terraform/") for p in file_paths
-    )
+    has_terraform = any(p.endswith(".tf") or p.startswith("terraform/") for p in file_paths)
 
     if "package.json" in file_paths:
         stack.add("nodejs")
@@ -23,6 +21,9 @@ def analyze_repo(file_paths: List[str]) -> Dict:
 
     if has_docker:
         findings.append("Dockerfile present")
+
+    if has_compose:
+        findings.append("Docker Compose present")
 
     if has_ci:
         findings.append("CI/CD pipeline detected")

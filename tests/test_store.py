@@ -1,9 +1,8 @@
-import pytest
-from memory.models import UserProfile, SkillState
+from memory.models import SkillState, UserProfile
 
 
 def test_save_and_load_roundtrip(tmp_db):
-    from memory.store import save_profile, load_profile
+    from memory.store import load_profile, save_profile
 
     profile = UserProfile(
         user_level="developing",
@@ -40,8 +39,8 @@ def test_load_empty_db(tmp_db):
 
 def test_backward_compat_old_format(tmp_db):
     """Test loading data that was saved without weighted_score/history fields."""
-    import sqlite3
     import json
+    import sqlite3
 
     conn = sqlite3.connect(tmp_db)
     c = conn.cursor()
@@ -74,7 +73,7 @@ def test_backward_compat_old_format(tmp_db):
 
 
 def test_overwrite_profile(tmp_db):
-    from memory.store import save_profile, load_profile
+    from memory.store import load_profile, save_profile
 
     profile1 = UserProfile(user_level="junior")
     save_profile(profile1)
@@ -87,7 +86,7 @@ def test_overwrite_profile(tmp_db):
 
 
 def test_multiple_skills(tmp_db):
-    from memory.store import save_profile, load_profile
+    from memory.store import load_profile, save_profile
 
     profile = UserProfile(
         user_level="developing",

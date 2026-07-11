@@ -1,0 +1,12 @@
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+# E501 off: the long lines are prose (mentor guidance strings in
+# enhancer/domain_rules.py); code line length is enforced by `ruff format`.
+# Complexity (C90) is deliberately NOT gated yet: several analyzer functions
+# sit at complexity 11-34 and need real refactoring before a gate would be
+# honest. Tracked as known debt.
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]

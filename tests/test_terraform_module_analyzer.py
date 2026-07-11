@@ -1,18 +1,16 @@
-import pytest
 from reviewers.terraform_module_analyzer import (
-    analyze_terraform_modules,
-    _check_module_sources,
     _check_module_required_variables,
-    _check_variable_usage,
+    _check_module_sources,
     _check_output_references,
-    _check_sensitive_variables,
     _check_sensitive_outputs,
+    _check_sensitive_variables,
     _check_tfvars_secrets,
     _check_untrusted_module_sources,
+    _check_variable_usage,
     _generate_cost_summary,
+    analyze_terraform_modules,
 )
 from reviewers.terraform_reviewer import _parse_tf_content
-
 
 # ---------------------------------------------------------------------------
 # Module Source Validation
@@ -29,11 +27,11 @@ def test_module_missing_source():
 
 def test_module_local_path_not_found():
     files = {
-        "main.tf": '''
+        "main.tf": """
 module "vpc" {
   source = "./modules/vpc"
 }
-'''
+"""
     }
     parsed = {k: v for k, v in ((k, _parse_tf_content(v)) for k, v in files.items()) if v}
     findings = _check_module_sources(parsed, list(files.keys()))
@@ -42,11 +40,11 @@ module "vpc" {
 
 def test_module_local_path_found():
     files = {
-        "main.tf": '''
+        "main.tf": """
 module "vpc" {
   source = "./modules/vpc"
 }
-''',
+""",
         "modules/vpc/main.tf": 'resource "aws_vpc" "main" {\n  cidr_block = "10.0.0.0/16"\n}\n',
     }
     parsed = {k: v for k, v in ((k, _parse_tf_content(v)) for k, v in files.items()) if v}
@@ -57,11 +55,11 @@ module "vpc" {
 
 def test_module_untrusted_source():
     files = {
-        "main.tf": '''
+        "main.tf": """
 module "shady" {
   source = "some-random-registry.io/org/module"
 }
-'''
+"""
     }
     parsed = {k: v for k, v in ((k, _parse_tf_content(v)) for k, v in files.items()) if v}
     findings = _check_module_sources(parsed, list(files.keys()))
@@ -75,20 +73,20 @@ module "shady" {
 
 def test_module_missing_required_variable():
     files = {
-        "main.tf": '''
+        "main.tf": """
 module "db" {
   source = "./modules/db"
   engine = "postgres"
 }
-''',
-        "modules/db/variables.tf": '''
+""",
+        "modules/db/variables.tf": """
 variable "engine" {
   type = string
 }
 variable "instance_class" {
   type = string
 }
-''',
+""",
     }
     parsed = {k: v for k, v in ((k, _parse_tf_content(v)) for k, v in files.items()) if v}
     findings = _check_module_required_variables(parsed)
@@ -98,21 +96,21 @@ variable "instance_class" {
 
 def test_module_all_required_variables_passed():
     files = {
-        "main.tf": '''
+        "main.tf": """
 module "db" {
   source         = "./modules/db"
   engine         = "postgres"
   instance_class = "db.t3.micro"
 }
-''',
-        "modules/db/variables.tf": '''
+""",
+        "modules/db/variables.tf": """
 variable "engine" {
   type = string
 }
 variable "instance_class" {
   type = string
 }
-''',
+""",
     }
     parsed = {k: v for k, v in ((k, _parse_tf_content(v)) for k, v in files.items()) if v}
     findings = _check_module_required_variables(parsed)
@@ -121,13 +119,13 @@ variable "instance_class" {
 
 def test_module_variable_with_default_not_required():
     files = {
-        "main.tf": '''
+        "main.tf": """
 module "db" {
   source = "./modules/db"
   engine = "postgres"
 }
-''',
-        "modules/db/variables.tf": '''
+""",
+        "modules/db/variables.tf": """
 variable "engine" {
   type = string
 }
@@ -135,7 +133,7 @@ variable "instance_class" {
   type    = string
   default = "db.t3.micro"
 }
-''',
+""",
     }
     parsed = {k: v for k, v in ((k, _parse_tf_content(v)) for k, v in files.items()) if v}
     findings = _check_module_required_variables(parsed)
@@ -150,58 +148,52 @@ variable "instance_class" {
 
 def test_unused_variable_detected():
     files = {
-        "variables.tf": '''
+        "variables.tf": """
 variable "region" {
   type = string
 }
 variable "unused_var" {
   type = string
 }
-''',
-        "main.tf": '''
+""",
+        "main.tf": """
 provider "aws" {
   region = var.region
 }
-''',
+""",
     }
     parsed = {k: v for k, v in ((k, _parse_tf_content(v)) for k, v in files.items()) if v}
     findings = _check_variable_usage(parsed, files)
-    assert any(
-        "unused_var" in f["message"] and "never referenced" in f["message"]
-        for f in findings
-    )
+    assert any("unused_var" in f["message"] and "never referenced" in f["message"] for f in findings)
 
 
 def test_undeclared_variable_detected():
     files = {
-        "main.tf": '''
+        "main.tf": """
 resource "aws_instance" "web" {
   ami           = var.ami_id
   instance_type = var.instance_type
 }
-''',
+""",
     }
     parsed = {k: v for k, v in ((k, _parse_tf_content(v)) for k, v in files.items()) if v}
     findings = _check_variable_usage(parsed, files)
     assert any("ami_id" in f["message"] and "never declared" in f["message"] for f in findings)
-    assert any(
-        "instance_type" in f["message"] and "never declared" in f["message"]
-        for f in findings
-    )
+    assert any("instance_type" in f["message"] and "never declared" in f["message"] for f in findings)
 
 
 def test_all_variables_used_and_declared():
     files = {
-        "variables.tf": '''
+        "variables.tf": """
 variable "ami_id" {
   type = string
 }
-''',
-        "main.tf": '''
+""",
+        "main.tf": """
 resource "aws_instance" "web" {
   ami = var.ami_id
 }
-''',
+""",
     }
     parsed = {k: v for k, v in ((k, _parse_tf_content(v)) for k, v in files.items()) if v}
     findings = _check_variable_usage(parsed, files)
@@ -215,11 +207,11 @@ resource "aws_instance" "web" {
 
 def test_output_referencing_nonexistent_resource():
     files = {
-        "outputs.tf": '''
+        "outputs.tf": """
 output "web_ip" {
   value = aws_instance.web.public_ip
 }
-''',
+""",
     }
     parsed = {k: v for k, v in ((k, _parse_tf_content(v)) for k, v in files.items()) if v}
     findings = _check_output_references(parsed)
@@ -228,17 +220,17 @@ output "web_ip" {
 
 def test_output_referencing_existing_resource():
     files = {
-        "main.tf": '''
+        "main.tf": """
 resource "aws_instance" "web" {
   ami           = "ami-123"
   instance_type = "t3.micro"
 }
-''',
-        "outputs.tf": '''
+""",
+        "outputs.tf": """
 output "web_ip" {
   value = aws_instance.web.public_ip
 }
-''',
+""",
     }
     parsed = {k: v for k, v in ((k, _parse_tf_content(v)) for k, v in files.items()) if v}
     findings = _check_output_references(parsed)
@@ -248,11 +240,11 @@ output "web_ip" {
 
 def test_output_referencing_nonexistent_module():
     files = {
-        "outputs.tf": '''
+        "outputs.tf": """
 output "vpc_id" {
   value = module.ghost_vpc.vpc_id
 }
-''',
+""",
     }
     parsed = {k: v for k, v in ((k, _parse_tf_content(v)) for k, v in files.items()) if v}
     findings = _check_output_references(parsed)
@@ -266,11 +258,11 @@ output "vpc_id" {
 
 def test_sensitive_var_missing_flag():
     files = {
-        "variables.tf": '''
+        "variables.tf": """
 variable "db_password" {
   type = string
 }
-'''
+"""
     }
     parsed = {k: v for k, v in ((k, _parse_tf_content(v)) for k, v in files.items()) if v}
     findings = _check_sensitive_variables(parsed)
@@ -281,12 +273,12 @@ variable "db_password" {
 
 def test_sensitive_var_with_flag():
     files = {
-        "variables.tf": '''
+        "variables.tf": """
 variable "db_password" {
   type      = string
   sensitive = true
 }
-'''
+"""
     }
     parsed = {k: v for k, v in ((k, _parse_tf_content(v)) for k, v in files.items()) if v}
     findings = _check_sensitive_variables(parsed)
@@ -296,13 +288,13 @@ variable "db_password" {
 
 def test_sensitive_var_hardcoded_default():
     files = {
-        "variables.tf": '''
+        "variables.tf": """
 variable "api_key" {
   type      = string
   sensitive = true
   default   = "sk-12345abc"
 }
-'''
+"""
     }
     parsed = {k: v for k, v in ((k, _parse_tf_content(v)) for k, v in files.items()) if v}
     findings = _check_sensitive_variables(parsed)
@@ -311,12 +303,12 @@ variable "api_key" {
 
 def test_non_sensitive_var_not_flagged():
     files = {
-        "variables.tf": '''
+        "variables.tf": """
 variable "region" {
   type    = string
   default = "us-east-1"
 }
-'''
+"""
     }
     parsed = {k: v for k, v in ((k, _parse_tf_content(v)) for k, v in files.items()) if v}
     findings = _check_sensitive_variables(parsed)
@@ -330,11 +322,11 @@ variable "region" {
 
 def test_sensitive_output_not_marked():
     files = {
-        "outputs.tf": '''
+        "outputs.tf": """
 output "db_password" {
   value = var.db_password
 }
-'''
+"""
     }
     parsed = {k: v for k, v in ((k, _parse_tf_content(v)) for k, v in files.items()) if v}
     findings = _check_sensitive_outputs(parsed)
@@ -344,12 +336,12 @@ output "db_password" {
 
 def test_sensitive_output_properly_marked():
     files = {
-        "outputs.tf": '''
+        "outputs.tf": """
 output "db_password" {
   value     = var.db_password
   sensitive = true
 }
-'''
+"""
     }
     parsed = {k: v for k, v in ((k, _parse_tf_content(v)) for k, v in files.items()) if v}
     findings = _check_sensitive_outputs(parsed)
@@ -358,11 +350,11 @@ output "db_password" {
 
 def test_non_sensitive_output_not_flagged():
     files = {
-        "outputs.tf": '''
+        "outputs.tf": """
 output "instance_id" {
   value = aws_instance.web.id
 }
-'''
+"""
     }
     parsed = {k: v for k, v in ((k, _parse_tf_content(v)) for k, v in files.items()) if v}
     findings = _check_sensitive_outputs(parsed)
@@ -414,11 +406,11 @@ def test_tf_file_not_scanned_as_tfvars():
 
 def test_git_module_no_version():
     files = {
-        "main.tf": '''
+        "main.tf": """
 module "vpc" {
   source = "git::https://github.com/org/terraform-vpc.git"
 }
-'''
+"""
     }
     parsed = {k: v for k, v in ((k, _parse_tf_content(v)) for k, v in files.items()) if v}
     findings = _check_untrusted_module_sources(parsed)
@@ -427,11 +419,11 @@ module "vpc" {
 
 def test_git_module_with_ref():
     files = {
-        "main.tf": '''
+        "main.tf": """
 module "vpc" {
   source = "git::https://github.com/org/terraform-vpc.git?ref=v1.0.0"
 }
-'''
+"""
     }
     parsed = {k: v for k, v in ((k, _parse_tf_content(v)) for k, v in files.items()) if v}
     findings = _check_untrusted_module_sources(parsed)
@@ -441,11 +433,11 @@ module "vpc" {
 
 def test_registry_module_no_version():
     files = {
-        "main.tf": '''
+        "main.tf": """
 module "vpc" {
   source = "terraform-aws-modules/vpc/aws"
 }
-'''
+"""
     }
     parsed = {k: v for k, v in ((k, _parse_tf_content(v)) for k, v in files.items()) if v}
     findings = _check_untrusted_module_sources(parsed)
@@ -454,12 +446,12 @@ module "vpc" {
 
 def test_registry_module_with_version():
     files = {
-        "main.tf": '''
+        "main.tf": """
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "~> 5.0"
 }
-'''
+"""
     }
     parsed = {k: v for k, v in ((k, _parse_tf_content(v)) for k, v in files.items()) if v}
     findings = _check_untrusted_module_sources(parsed)
@@ -474,7 +466,7 @@ module "vpc" {
 
 def test_cost_summary_detects_expensive_resources():
     files = {
-        "main.tf": '''
+        "main.tf": """
 resource "aws_nat_gateway" "main" {
   allocation_id = "eip-123"
   subnet_id     = "subnet-123"
@@ -485,7 +477,7 @@ resource "aws_eks_cluster" "main" {
 resource "aws_s3_bucket" "data" {
   bucket = "my-bucket"
 }
-'''
+"""
     }
     parsed = {k: v for k, v in ((k, _parse_tf_content(v)) for k, v in files.items()) if v}
     cost = _generate_cost_summary(parsed)
@@ -496,14 +488,14 @@ resource "aws_s3_bucket" "data" {
 
 def test_cost_summary_low_cost_only():
     files = {
-        "main.tf": '''
+        "main.tf": """
 resource "aws_s3_bucket" "data" {
   bucket = "my-bucket"
 }
 resource "aws_sqs_queue" "main" {
   name = "my-queue"
 }
-'''
+"""
     }
     parsed = {k: v for k, v in ((k, _parse_tf_content(v)) for k, v in files.items()) if v}
     cost = _generate_cost_summary(parsed)
@@ -514,12 +506,12 @@ resource "aws_sqs_queue" "main" {
 
 def test_cost_summary_total_estimate():
     files = {
-        "main.tf": '''
+        "main.tf": """
 resource "aws_nat_gateway" "main" {
   allocation_id = "eip-123"
   subnet_id     = "subnet-123"
 }
-'''
+"""
     }
     parsed = {k: v for k, v in ((k, _parse_tf_content(v)) for k, v in files.items()) if v}
     cost = _generate_cost_summary(parsed)
@@ -535,7 +527,7 @@ resource "aws_nat_gateway" "main" {
 
 def test_full_analysis_output_structure():
     files = {
-        "main.tf": '''
+        "main.tf": """
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "~> 5.0"
@@ -544,20 +536,20 @@ resource "aws_instance" "web" {
   ami           = var.ami_id
   instance_type = "t3.micro"
 }
-''',
-        "variables.tf": '''
+""",
+        "variables.tf": """
 variable "ami_id" {
   type = string
 }
 variable "db_password" {
   type = string
 }
-''',
-        "outputs.tf": '''
+""",
+        "outputs.tf": """
 output "instance_id" {
   value = aws_instance.web.id
 }
-''',
+""",
     }
     result = analyze_terraform_modules(files)
     assert result["analysis_type"] == "terraform-module-analysis"
@@ -586,12 +578,12 @@ def test_empty_files():
 
 def test_maturity_level_basic_with_critical():
     files = {
-        "main.tf": '''
+        "main.tf": """
 variable "password" {
   type    = string
   default = "hardcoded123"
 }
-''',
+""",
     }
     result = analyze_terraform_modules(files)
     assert result["maturity_level"] == "basic"

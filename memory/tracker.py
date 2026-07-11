@@ -1,5 +1,5 @@
+from memory.models import SKILL_DEPENDENCIES, SKILL_LEVELS, SkillState
 from memory.store import load_profile, save_profile
-from memory.models import SkillState, SKILL_LEVELS, SKILL_DEPENDENCIES
 
 WEIGHTED_SKILL_MAP = {
     "ci_cd": [
@@ -119,11 +119,7 @@ def update_skills(feedback: str, maturity: str):
             state.level = compute_level(state.weighted_score)
             profile.skills[skill] = state
 
-    levels_index = [
-        SKILL_LEVELS.index(s.level)
-        for s in profile.skills.values()
-        if s.level != "unknown"
-    ]
+    levels_index = [SKILL_LEVELS.index(s.level) for s in profile.skills.values() if s.level != "unknown"]
     if levels_index:
         avg = sum(levels_index) / len(levels_index)
         profile.user_level = SKILL_LEVELS[min(int(avg), len(SKILL_LEVELS) - 1)]

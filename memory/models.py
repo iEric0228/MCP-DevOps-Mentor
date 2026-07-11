@@ -1,7 +1,6 @@
 from dataclasses import dataclass, field
 from typing import Dict, List
 
-
 SKILL_LEVELS = ["unknown", "beginner", "developing", "solid", "advanced"]
 
 SKILL_DEPENDENCIES = {

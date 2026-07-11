@@ -1,4 +1,5 @@
 import os
+
 import requests
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
