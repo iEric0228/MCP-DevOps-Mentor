@@ -171,10 +171,39 @@ def _check_s3_security(parsed: Dict, filename: str) -> List[Dict]:
     return findings
 
 
+_WILDCARD_ACTION_RE = re.compile(
+    r"""['\"]?(?:not_)?actions?['\"]?\s*[:=]\s*(?:\[[^\]]*)?['\"]\*['\"]""",
+    re.IGNORECASE,
+)
+
+
+def _contains_wildcard_action(node) -> bool:
+    """Walk the parsed HCL for Action/NotAction values equal to "*".
+
+    Handles both structured dict values and policies embedded as strings
+    (e.g. jsonencode(...) interpolations), and tolerates hcl2 versions that
+    quote-wrap keys. Never rely on str(parsed) — its quoting is an
+    implementation detail of the parser version.
+    """
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if str(key).strip("\"'").lower() in ("action", "actions", "not_action", "not_actions"):
+                values = value if isinstance(value, list) else [value]
+                if any(isinstance(v, str) and v.strip("\"'") == "*" for v in values):
+                    return True
+            if _contains_wildcard_action(value):
+                return True
+        return False
+    if isinstance(node, list):
+        return any(_contains_wildcard_action(item) for item in node)
+    if isinstance(node, str):
+        return bool(_WILDCARD_ACTION_RE.search(node))
+    return False
+
+
 def _check_iam_policies(parsed: Dict, filename: str) -> List[Dict]:
     findings = []
-    content_str = str(parsed)
-    if '"*"' in content_str and ("Action" in content_str or "action" in content_str):
+    if _contains_wildcard_action(parsed):
         findings.append({
             "severity": CRITICAL,
             "message": f"{filename}: IAM policy may contain wildcard (*) actions",
