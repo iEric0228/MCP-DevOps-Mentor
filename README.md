@@ -1,50 +1,26 @@
 # MCP DevOps Mentor
 
+[![CI](https://github.com/iEric0228/mcp-devops-mentor/actions/workflows/ci.yml/badge.svg)](https://github.com/iEric0228/mcp-devops-mentor/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
+
 A Dockerized MCP (Model Context Protocol) server that acts as a senior DevOps and Cloud engineering mentor. It reviews GitHub repositories, analyzes CI/CD pipelines, audits Terraform infrastructure, advises on AWS cost and security, and tracks your skill progression over time.
 
 Built to teach **how to think like a DevOps engineer**, not just what to do.
 
 ## Architecture
 
-```
-MCP Client (IDE / Claude)
-        |
-        | MCP Protocol
-        v
-+-------------------------------+
-|   MCP DevOps Mentor Server    |
-|                               |
-|   Mentor Brain                |
-|   - System Prompt + Modes     |
-|                               |
-|   Repo Analyzer               |
-|   - Tech Stack Detection      |
-|   - DevOps Maturity Scoring   |
-|                               |
-|   CI/CD Review Engine         |
-|   - GitHub Actions (YAML)     |
-|   - Security + Best Practices |
-|                               |
-|   Terraform Review Engine     |
-|   - HCL2 Parsing              |
-|   - Security + State Mgmt     |
-|                               |
-|   AWS Advisor                 |
-|   - Cost Optimization         |
-|   - Security Posture          |
-|                               |
-|   Prompt Enhancer             |
-|   - Domain Detection          |
-|   - Dimension Injection       |
-|   - Skill-Aware Adaptation    |
-|                               |
-|   Skill Tracker               |
-|   - Weighted Scoring          |
-|   - Learning Path Engine      |
-|   - SQLite Persistence        |
-+-------------------------------+
-        |
-     Docker
+```mermaid
+flowchart TD
+    Client["MCP Client (IDE / Claude)"] -->|MCP protocol| Server["MCP DevOps Mentor Server<br/>(FastAPI + FastMCP, Docker)"]
+    Server --> Brain["Mentor Brain<br/>system prompt + 4 modes"]
+    Server --> Repo["Repo Analyzer<br/>stack detection, maturity scoring"]
+    Server --> CICD["CI/CD Review Engine<br/>GitHub Actions YAML"]
+    Server --> TF["Terraform Review Engine<br/>HCL2 parsing, security, state"]
+    Server --> AWS["AWS Advisor<br/>cost + security posture"]
+    Server --> Enhancer["Prompt Enhancer<br/>domain detection, skill-aware"]
+    Server --> Tracker["Skill Tracker<br/>weighted scoring, SQLite"]
+    Repo & CICD & TF & AWS -->|read-only token| GitHub[("GitHub API")]
 ```
 
 ## Features
